@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -19,6 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 
 @Testcontainers
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 abstract class IntegrationTestBase {
   @LocalServerPort
@@ -52,12 +54,20 @@ abstract class IntegrationTestBase {
     @Container
     private val redis = GenericContainer<Nothing>("redis:7").apply { withExposedPorts(6379) }
 
+    private fun ensureContainersStarted() {
+      if (!postgres.isRunning) postgres.start()
+      if (!redis.isRunning) redis.start()
+    }
+
     @JvmStatic
     @DynamicPropertySource
     fun register(registry: DynamicPropertyRegistry) {
+      ensureContainersStarted()
       registry.add("spring.datasource.url") { postgres.jdbcUrl }
       registry.add("spring.datasource.username") { postgres.username }
       registry.add("spring.datasource.password") { postgres.password }
+      registry.add("spring.data.redis.host") { redis.host }
+      registry.add("spring.data.redis.port") { redis.getMappedPort(6379) }
       registry.add("spring.redis.host") { redis.host }
       registry.add("spring.redis.port") { redis.getMappedPort(6379) }
       registry.add("app.adminApiKey") { "test_admin" }
