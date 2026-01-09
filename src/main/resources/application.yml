@@ -1,0 +1,53 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/payments}
+    username: ${DB_USER:payments}
+    password: ${DB_PASSWORD:payments}
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  flyway:
+    enabled: true
+    locations: filesystem:./migrations
+  main:
+    banner-mode: "off"
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,info,prometheus
+      path-mapping:
+        prometheus: metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      service: payments-platform
+
+app:
+  role: ${APP_ROLE:api}
+  env: ${APP_ENV:dev}
+  adminApiKey: ${ADMIN_API_KEY:change_me}
+  webhookSecret: ${WEBHOOK_SECRET:change_me}
+  eventMaxAttempts: ${EVENT_MAX_ATTEMPTS:5}
+  outboxBatchSize: ${OUTBOX_BATCH_SIZE:50}
+  outboxPollIntervalMs: ${OUTBOX_POLL_INTERVAL_MS:1000}
+  schedulerIntervalMs: ${SCHEDULER_INTERVAL_MS:60000}
+  rateLimitPerMinute: ${RATE_LIMIT_PER_MIN:120}
+  idempotencyTtlMinutes: ${IDEMPOTENCY_TTL_MIN:1440}
+  processingTimeoutMinutes: ${PROCESSING_TIMEOUT_MIN:15}
+  maxPayloadBytes: ${MAX_PAYLOAD_BYTES:65536}
+
+logging:
+  config: classpath:logback-spring.xml

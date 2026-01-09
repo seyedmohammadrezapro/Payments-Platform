@@ -1,0 +1,15 @@
+target
+.git
+.idea
+.vscode
+.mvn
+*.iml
+*.log
+*.tmp
+**/build
+**/out
+node_modules
+dist
+coverage
+Dockerfile
+docker-compose.yml

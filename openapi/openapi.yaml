@@ -1,0 +1,650 @@
+openapi: 3.0.3
+info:
+  title: Payments Platform
+  version: 1.0.0
+  description: Webhook ingestion, subscription billing, and double-entry ledger.
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /customers:
+    post:
+      summary: Create customer
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Invalid request
+
+  /plans:
+    post:
+      summary: Create plan
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          description: Invalid request
+
+  /subscriptions:
+    post:
+      summary: Create subscription
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionCreateResponse'
+        '400':
+          description: Invalid request
+
+  /subscriptions/{id}:
+    get:
+      summary: Get subscription
+      parameters:
+        - $ref: '#/components/parameters/SubscriptionId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          description: Not found
+
+  /subscriptions/{id}/cancel:
+    post:
+      summary: Cancel subscription
+      parameters:
+        - $ref: '#/components/parameters/SubscriptionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelSubscriptionRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+  /invoices:
+    get:
+      summary: List invoices
+      parameters:
+        - name: subscription_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, paid, failed, refunded]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCursorPage'
+
+  /invoices/{id}:
+    get:
+      summary: Get invoice
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+        '404':
+          description: Not found
+
+  /webhooks/provider:
+    post:
+      summary: Ingest provider webhook
+      parameters:
+        - name: X-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderWebhook'
+      responses:
+        '200':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                  duplicate:
+                    type: boolean
+        '401':
+          description: Invalid signature
+
+  /admin/stats:
+    get:
+      summary: Admin stats
+      security:
+        - AdminKey: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStatsResponse'
+
+  /admin/events:
+    get:
+      summary: List provider events
+      security:
+        - AdminKey: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [received, processing, succeeded, failed, dead]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderEventCursorPage'
+
+  /admin/ledger/transactions:
+    get:
+      summary: List ledger transactions
+      security:
+        - AdminKey: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerTransactionCursorPage'
+
+  /admin/ledger/transactions/{id}:
+    get:
+      summary: Get ledger transaction
+      security:
+        - AdminKey: []
+      parameters:
+        - $ref: '#/components/parameters/TransactionId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerTransactionDetails'
+
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: OK
+
+  /readyz:
+    get:
+      summary: Readiness probe
+      responses:
+        '200':
+          description: OK
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      responses:
+        '200':
+          description: Metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+    SubscriptionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InvoiceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TransactionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  securitySchemes:
+    AdminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+
+  schemas:
+    CreateCustomerRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    CustomerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreatePlanRequest:
+      type: object
+      required: [name, amountCents, currency, intervalUnit, intervalCount]
+      properties:
+        name:
+          type: string
+        amountCents:
+          type: integer
+        currency:
+          type: string
+        intervalUnit:
+          type: string
+          enum: [day, month]
+        intervalCount:
+          type: integer
+    PlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        amountCents:
+          type: integer
+        currency:
+          type: string
+        intervalUnit:
+          type: string
+        intervalCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateSubscriptionRequest:
+      type: object
+      required: [customerId, planId]
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        startAt:
+          type: string
+          format: date-time
+        paymentMethodRef:
+          type: string
+    CancelSubscriptionRequest:
+      type: object
+      properties:
+        cancelAtPeriodEnd:
+          type: boolean
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, active, past_due, cancelled]
+        currentPeriodStart:
+          type: string
+          format: date-time
+          nullable: true
+        currentPeriodEnd:
+          type: string
+          format: date-time
+          nullable: true
+        cancelAtPeriodEnd:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SubscriptionCreateResponse:
+      type: object
+      properties:
+        subscription:
+          $ref: '#/components/schemas/SubscriptionResponse'
+        invoice:
+          $ref: '#/components/schemas/InvoiceResponse'
+
+    InvoiceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        subscriptionId:
+          type: string
+          format: uuid
+        amountCents:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, paid, failed, refunded]
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+    InvoiceCursorPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceResponse'
+        nextCursor:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProviderWebhook:
+      type: object
+      required: [event_id, type, created_at, data]
+      properties:
+        event_id:
+          type: string
+        type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        data:
+          type: object
+
+    ProviderEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventId:
+          type: string
+        type:
+          type: string
+        rawJson:
+          type: string
+        status:
+          type: string
+          enum: [received, processing, succeeded, failed, dead]
+        receivedAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        attempts:
+          type: integer
+        lastError:
+          type: string
+          nullable: true
+    ProviderEventCursorPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderEvent'
+        nextCursor:
+          type: string
+          format: date-time
+          nullable: true
+
+    LedgerTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalRef:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    LedgerEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        direction:
+          type: string
+          enum: [debit, credit]
+        amountCents:
+          type: integer
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    LedgerTransactionCursorPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerTransaction'
+        nextCursor:
+          type: string
+          format: date-time
+          nullable: true
+    LedgerTransactionDetails:
+      type: object
+      properties:
+        transaction:
+          $ref: '#/components/schemas/LedgerTransaction'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+
+    AdminStatsResponse:
+      type: object
+      properties:
+        counts:
+          type: object
+          properties:
+            events_received:
+              type: integer
+            events_processed:
+              type: integer
+            events_failed:
+              type: integer
+            events_dead:
+              type: integer
+        events:
+          type: object
+          properties:
+            received:
+              type: integer
+            processing:
+              type: integer
+            succeeded:
+              type: integer
+            failed:
+              type: integer
+            dead:
+              type: integer
+        invoices:
+          type: object
+          properties:
+            pending:
+              type: integer
+            paid:
+              type: integer
+            failed:
+              type: integer
+            refunded:
+              type: integer
+        subscriptions:
+          type: object
+          properties:
+            pending:
+              type: integer
+            active:
+              type: integer
+            past_due:
+              type: integer
+            cancelled:
+              type: integer
+        processing:
+          type: object
+          properties:
+            retry_rate:
+              type: number
+            p95_process_duration_seconds:
+              type: number

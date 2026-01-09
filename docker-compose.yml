@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: payments
+      POSTGRES_PASSWORD: payments
+    ports:
+      - "5432:5432"
+    volumes:
+      - payments-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments -d payments"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/payments
+      DB_USER: payments
+      DB_PASSWORD: payments
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ADMIN_API_KEY: change_me
+      WEBHOOK_SECRET: change_me
+      APP_ENV: local
+      EVENT_MAX_ATTEMPTS: 2
+      OUTBOX_BATCH_SIZE: 50
+      OUTBOX_POLL_INTERVAL_MS: 500
+      SCHEDULER_INTERVAL_MS: 60000
+      RATE_LIMIT_PER_MIN: 120
+      MAX_PAYLOAD_BYTES: 65536
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: worker
+      SPRING_FLYWAY_ENABLED: "false"
+      DB_URL: jdbc:postgresql://db:5432/payments
+      DB_USER: payments
+      DB_PASSWORD: payments
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ADMIN_API_KEY: change_me
+      WEBHOOK_SECRET: change_me
+      APP_ENV: local
+      EVENT_MAX_ATTEMPTS: 2
+      OUTBOX_BATCH_SIZE: 50
+      OUTBOX_POLL_INTERVAL_MS: 500
+      RATE_LIMIT_PER_MIN: 120
+      MAX_PAYLOAD_BYTES: 65536
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: scheduler
+      SPRING_FLYWAY_ENABLED: "false"
+      DB_URL: jdbc:postgresql://db:5432/payments
+      DB_USER: payments
+      DB_PASSWORD: payments
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ADMIN_API_KEY: change_me
+      WEBHOOK_SECRET: change_me
+      APP_ENV: local
+      EVENT_MAX_ATTEMPTS: 2
+      SCHEDULER_INTERVAL_MS: 60000
+      MAX_PAYLOAD_BYTES: 65536
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  payments-db:

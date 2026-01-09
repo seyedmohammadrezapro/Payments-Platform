@@ -1,0 +1,27 @@
+<configuration>
+  <springProperty scope="context" name="service" source="management.metrics.tags.service" defaultValue="payments-platform"/>
+  <springProperty scope="context" name="env" source="app.env" defaultValue="dev"/>
+  <springProperty scope="context" name="role" source="app.role" defaultValue="api"/>
+
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <timestamp/>
+        <logLevel/>
+        <threadName/>
+        <loggerName/>
+        <message/>
+        <mdc/>
+        <arguments/>
+        <stackTrace/>
+        <pattern>
+          <pattern>{"service":"${service}","env":"${env}","role":"${role}"}</pattern>
+        </pattern>
+      </providers>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON"/>
+  </root>
+</configuration>
