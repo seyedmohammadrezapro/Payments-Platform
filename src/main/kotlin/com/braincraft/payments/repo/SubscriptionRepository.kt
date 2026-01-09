@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Repository
@@ -42,8 +43,8 @@ class SubscriptionRepository(private val jdbc: NamedParameterJdbcTemplate) {
         "customer_id" to customerId,
         "plan_id" to planId,
         "status" to status.name.lowercase(),
-        "start" to periodStart,
-        "end" to periodEnd
+        "start" to periodStart?.atOffset(ZoneOffset.UTC),
+        "end" to periodEnd?.atOffset(ZoneOffset.UTC)
       ),
       UUID::class.java
     )
@@ -70,7 +71,7 @@ class SubscriptionRepository(private val jdbc: NamedParameterJdbcTemplate) {
       ORDER BY current_period_end ASC
       LIMIT :limit
       """.trimIndent(),
-      mapOf("now" to now, "limit" to limit),
+      mapOf("now" to now.atOffset(ZoneOffset.UTC), "limit" to limit),
       mapper
     )
   }
@@ -84,7 +85,11 @@ class SubscriptionRepository(private val jdbc: NamedParameterJdbcTemplate) {
           updated_at = now()
       WHERE id = :id
       """.trimIndent(),
-      mapOf("id" to id, "start" to periodStart, "end" to periodEnd)
+      mapOf(
+        "id" to id,
+        "start" to periodStart.atOffset(ZoneOffset.UTC),
+        "end" to periodEnd.atOffset(ZoneOffset.UTC)
+      )
     )
   }
 
@@ -108,8 +113,8 @@ class SubscriptionRepository(private val jdbc: NamedParameterJdbcTemplate) {
       mapOf(
         "id" to id,
         "status" to status.name.lowercase(),
-        "start" to periodStart,
-        "end" to periodEnd,
+        "start" to periodStart?.atOffset(ZoneOffset.UTC),
+        "end" to periodEnd?.atOffset(ZoneOffset.UTC),
         "cancel_at_period_end" to cancelAtPeriodEnd
       )
     )

@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Repository
@@ -67,7 +68,7 @@ class ProviderEventRepository(private val jdbc: NamedParameterJdbcTemplate) {
         "status" to status.name.lowercase(),
         "attempts" to attempts,
         "last_error" to lastError,
-        "processed_at" to processedAt
+        "processed_at" to processedAt?.atOffset(ZoneOffset.UTC)
       )
     )
   }
@@ -81,7 +82,7 @@ class ProviderEventRepository(private val jdbc: NamedParameterJdbcTemplate) {
     }
     if (cursor != null) {
       where.append(" AND received_at < :cursor")
-      params["cursor"] = cursor
+      params["cursor"] = cursor.atOffset(ZoneOffset.UTC)
     }
     params["limit"] = limit
     val sql = "SELECT * FROM provider_events $where ORDER BY received_at DESC LIMIT :limit"

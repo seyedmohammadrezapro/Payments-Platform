@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Repository
@@ -45,8 +46,8 @@ class InvoiceRepository(private val jdbc: NamedParameterJdbcTemplate) {
         "amount_cents" to amountCents,
         "currency" to currency,
         "status" to status.name.lowercase(),
-        "period_start" to periodStart,
-        "period_end" to periodEnd
+        "period_start" to periodStart.atOffset(ZoneOffset.UTC),
+        "period_end" to periodEnd.atOffset(ZoneOffset.UTC)
       ),
       UUID::class.java
     )
@@ -80,7 +81,7 @@ class InvoiceRepository(private val jdbc: NamedParameterJdbcTemplate) {
     }
     if (cursor != null) {
       where.append(" AND created_at < :cursor")
-      params["cursor"] = cursor
+      params["cursor"] = cursor.atOffset(ZoneOffset.UTC)
     }
     val sql = "SELECT * FROM invoices $where ORDER BY created_at DESC LIMIT :limit"
     params["limit"] = limit
@@ -99,7 +100,7 @@ class InvoiceRepository(private val jdbc: NamedParameterJdbcTemplate) {
       mapOf(
         "id" to id,
         "status" to status.name.lowercase(),
-        "paid_at" to paidAt
+        "paid_at" to paidAt?.atOffset(ZoneOffset.UTC)
       )
     )
   }

@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Repository
@@ -92,7 +93,7 @@ class LedgerRepository(private val jdbc: NamedParameterJdbcTemplate) {
     val params = mutableMapOf<String, Any>()
     if (cursor != null) {
       where.append(" AND created_at < :cursor")
-      params["cursor"] = cursor
+      params["cursor"] = cursor.atOffset(ZoneOffset.UTC)
     }
     params["limit"] = limit
     val sql = "SELECT * FROM ledger_transactions $where ORDER BY created_at DESC LIMIT :limit"

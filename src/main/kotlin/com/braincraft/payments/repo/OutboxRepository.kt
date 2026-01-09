@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Repository
@@ -81,7 +82,7 @@ class OutboxRepository(private val jdbc: NamedParameterJdbcTemplate) {
         "id" to id,
         "attempts" to attempts,
         "last_error" to lastError,
-        "available_at" to nextAvailableAt
+        "available_at" to nextAvailableAt.atOffset(ZoneOffset.UTC)
       )
     )
   }
