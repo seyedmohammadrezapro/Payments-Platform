@@ -123,7 +123,7 @@ class PaymentFlowIntegrationTest : IntegrationTestBase() {
   }
 
   private fun createSubscription(customerId: UUID, planId: UUID, startAt: Instant?): SubscriptionResult {
-    val body = mutableMapOf(
+    val body = mutableMapOf<String, Any>(
       "customerId" to customerId,
       "planId" to planId
     )

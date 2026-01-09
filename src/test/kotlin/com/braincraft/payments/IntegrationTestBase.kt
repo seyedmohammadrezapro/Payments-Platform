@@ -50,7 +50,7 @@ abstract class IntegrationTestBase {
     private val postgres = PostgreSQLContainer("postgres:16")
 
     @Container
-    private val redis = GenericContainer<Nothing>("redis:7").withExposedPorts(6379)
+    private val redis = GenericContainer<Nothing>("redis:7").apply { withExposedPorts(6379) }
 
     @JvmStatic
     @DynamicPropertySource

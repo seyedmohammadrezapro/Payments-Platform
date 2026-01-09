@@ -19,4 +19,4 @@ if [ ! -x "$JAVA_CMD" ]; then
   JAVA_CMD="java"
 fi
 
-exec "$JAVA_CMD" -classpath "$MAVEN_WRAPPER_JAR" -Dmaven.multiModuleProjectDirectory="$MAVEN_PROJECTBASEDIR" -Dmaven.home="$MAVEN_PROJECTBASEDIR/.mvn/wrapper" -Dmaven.wrapper.properties="$MAVEN_WRAPPER_PROPERTIES" org.apache.maven.wrapper.MavenWrapperMain "$@"
+exec "$JAVA_CMD" -classpath "$MAVEN_WRAPPER_JAR" -Dmaven.multiModuleProjectDirectory="$MAVEN_PROJECTBASEDIR" org.apache.maven.wrapper.MavenWrapperMain "$@"

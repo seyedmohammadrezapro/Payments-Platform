@@ -103,12 +103,6 @@
       <version>1.19.7</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>redis</artifactId>
-      <version>1.19.7</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
@@ -118,6 +112,7 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
         <configuration>
           <mainClass>com.braincraft.payments.PaymentsApplication</mainClass>
         </configuration>
@@ -146,6 +141,13 @@
             <plugin>spring</plugin>
           </compilerPlugins>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-allopen</artifactId>
+            <version>${kotlin.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
