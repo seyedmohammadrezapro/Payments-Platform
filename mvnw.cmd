@@ -18,6 +18,6 @@ IF NOT DEFINED JAVA_HOME (
   SET JAVA_EXE="%JAVA_HOME%\bin\java"
 )
 
-%JAVA_EXE% -jar "%WRAPPER_JAR%" -Dmaven.multiModuleProjectDirectory="%MAVEN_PROJECTBASEDIR%" -Dmaven.home="%MAVEN_PROJECTBASEDIR%.mvn\wrapper" -Dmaven.wrapper.properties="%WRAPPER_PROPERTIES%" %*
+%JAVA_EXE% -classpath "%WRAPPER_JAR%" -Dmaven.multiModuleProjectDirectory="%MAVEN_PROJECTBASEDIR%" -Dmaven.home="%MAVEN_PROJECTBASEDIR%.mvn\wrapper" -Dmaven.wrapper.properties="%WRAPPER_PROPERTIES%" org.apache.maven.wrapper.MavenWrapperMain %*
 
 ENDLOCAL
